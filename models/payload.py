@@ -1,4 +1,3 @@
-from prometheus_client import MetricsHandler
 from pydantic import BaseModel
 from datetime import datetime
 

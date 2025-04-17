@@ -4,6 +4,7 @@ import influxdb_client as influxdb
 from influxdb_client.client.write_api import SYNCHRONOUS
 from paho.mqtt import client as mqtt
 from models.payload import Status
+from datetime import datetime
 import json
 
 load_dotenv()
@@ -21,32 +22,34 @@ def on_message(client, userdata, msg):
     try:
         payload_data = json.loads(msg.payload)
         payload = Status(**payload_data)
-        print(f"Received message: {msg.topic} {payload}")
 
         fields_to_remove = ["id", "timestamp"]
         fields = {
             key: value
             for key, value in payload.model_dump().items()
-            if key not in fields_to_remove and value is not None
+                if key not in fields_to_remove and value is not None
         }
-        print(f"fields: {fields}")
 
-        dictionary = {
+        if payload.timestamp is None:
+            payload.timestamp = datetime.now()
+
+        record = {
             "measurement": payload.id,
             "time": payload.timestamp.isoformat(),
             "fields": fields,
         }
 
-        influxdb_client.write_api(write_options=SYNCHRONOUS).write(
-            bucket=influxdb_bucket, org=influxdb_org, record=dictionary
-        )
+        with influxdb_client.write_api(write_options=SYNCHRONOUS) as writer:
+            p = influxdb.Point.from_dict(record)
+            print(p)
+            writer.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
     except Exception as e:
         print(f"Error processing message: {e}")
 
 
 if __name__ == "__main__":
     influxdb_client = influxdb.InfluxDBClient(
-        url=influxdb_url, token=influxdb_token, org=influxdb_org, bucket=influxdb_bucket
+        url=influxdb_url, token=influxdb_token, org=influxdb_org
     )
 
     mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, mqtt_client_id)
