@@ -27,7 +27,7 @@ def on_message(client, userdata, msg):
         fields = {
             key: value
             for key, value in payload.model_dump().items()
-                if key not in fields_to_remove and value is not None
+            if key not in fields_to_remove and value is not None
         }
 
         if payload.timestamp is None:
