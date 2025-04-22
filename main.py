@@ -26,7 +26,7 @@ def on_message(client, userdata, msg):
             timestamp = int(payload[2])
         timestamp *= 1000000000
 
-        record = payload[0] + " " + payload[1] + " " + str(timestamp)
+        record = " ".join([payload[0], payload[1], str(timestamp)])
         with influxdb_client.write_api(write_options=SYNCHRONOUS) as writer:
             writer.write(bucket=influxdb_bucket, org=influxdb_org, record=record)
     except Exception as e:
